@@ -1,4 +1,5 @@
 #include <cstdint>
+#include "memory.h"
 
 class cpu {
 private:
@@ -18,10 +19,10 @@ private:
     bool overflow;
     bool negative;
     // Memory Reference
-    uint8_t *memory;
+    cpuMemory memory;
 
 public:
-    cpu(uint8_t *memory) {
+    cpu(cpuMemory memory) {
         this->memory = memory;
         pc = 0x0000;
         sp = 0xff;
