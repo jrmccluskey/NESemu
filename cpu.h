@@ -23,5 +23,7 @@ private:
 public:
     cpu(uint8_t *memory) {
         this->memory = memory;
+        pc = 0x0000;
+        sp = 0xff;
     }
 };
