@@ -26,10 +26,13 @@ private:
 
 public:
     cpu(cpuMemory memory) {
+        accumulator = 0x00;
+        regX = 0x00;
+        regY = 0x00;
         this->memory = memory;
         pc = 0x0000;
         sp = 0xff;
-        ps = 0x00;
+        ps = 0x34;
     }
 
     inline void setNegative(uint8_t value) {
