@@ -24,8 +24,24 @@ public:
         return index;
     }
 
+    // Overloaded function for PC addresses
+    inline int calcIndex(uint16_t addr) {
+        int index = addr/8;
+        if(index > 8191) {
+            // Out-of-bounds memory accesses wrap around
+            index = index % 8192;
+        }
+        return index;
+    }
+
     uint8_t readAddress(uint8_t lowBits, uint8_t hiBits) {
         int index = calcIndex(lowBits, hiBits);
+        return mem[index];
+    }
+
+    // Overloaded function for PC addresses
+    uint8_t readAddress(uint16_t addr) {
+        int index = calcIndex(addr);
         return mem[index];
     }
 
@@ -34,14 +50,9 @@ public:
         mem[index] = val;
     }
 
-    // Read off of indices for ease of use
-    uint8_t readIndex(int index) {
-        return mem[index];
-    }
-
-    // Write to indicies for ease of use 
-    void writeIndex(int index, uint8_t val) {
-        std::cout << index << ": " << val << "\n";
+    // Overloaded function for PC addresses
+    void writeAddress(uint16_t addr, uint8_t val) {
+        int index = calcIndex(addr);
         mem[index] = val;
     }
 };
