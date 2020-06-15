@@ -2,6 +2,14 @@
 #include <iostream>
 #include "memory.h"
 
+const uint8_t CARRY_MASK = 0x01;
+const uint8_t ZERO_MASK = 0x02;
+const uint8_t INTERRUPT_MASK = 0x04;
+const uint8_t DECIMAL_MASK = 0x08;
+const uint8_t BREAK_MASK = 0x10;
+const uint8_t OVERFLOW_MASK = 0x40;
+const uint8_t NEGATIVE_MASK = 0x80;
+
 class cpu {
 private:
     // Registers
@@ -12,13 +20,7 @@ private:
     uint16_t pc;
     uint8_t sp;
     // Bit flags
-    bool carry;
-    bool zero;
-    bool interruptDisable;
-    bool decimalMode;
-    bool breakCom;
-    bool overflow;
-    bool negative;
+    uint8_t ps;
     // Memory Reference
     cpuMemory memory;
 
@@ -27,6 +29,7 @@ public:
         this->memory = memory;
         pc = 0x0000;
         sp = 0xff;
+        ps = 0x00;
     }
 
     void emulateOp() {
@@ -105,19 +108,19 @@ public:
                 break;
             // CLC - Clear Carry Flag
             case 0x18:
-                this->carry = false;
+                this->ps = this->ps | (~CARRY_MASK);
                 this->pc += 1;
             // CLD - Clear Decimal Mode
             case 0xd8:
-                this->decimalMode = false;
+                this->ps = this->ps | (~DECIMAL_MASK);
                 this->pc += 1;
             // CLI - Clear Interrupt Disable Bit
             case 0x58:
-                this->interruptDisable = false;
+                this->ps = this->ps | (~INTERRUPT_MASK);;
                 this->pc += 1;
             // CLV - Clear Overflow Flag
             case 0xb8:
-                this->overflow = false;
+                this->ps = this->ps | (~OVERFLOW_MASK);
                 this->pc += 1;
             // CMP - Compare Memory with Accumulator
             case 0xc9:
@@ -300,17 +303,17 @@ public:
                 break;
             // SEC - Set Carry Flag
             case 0x38:
-                this->carry = true;
+                this->ps = this->ps | CARRY_MASK;
                 this->pc += 1;
                 break;
             // SED - Set Decimal Flag
             case 0xf8:
-                this->decimalMode = true;
+                this->ps = this->ps | DECIMAL_MASK;
                 this->pc += 1;
                 break;
             // SEI - Set Interrupt Disable Status
             case 0x78:
-                this->interruptDisable = true;
+                this->ps = this->ps | INTERRUPT_MASK;
                 this->pc += 1;
                 break;
             // STA - Store Accumulator in Memory

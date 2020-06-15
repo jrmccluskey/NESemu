@@ -34,10 +34,12 @@ public:
         mem[index] = val;
     }
 
+    // Read off of indices for ease of use
     uint8_t readIndex(int index) {
         return mem[index];
     }
 
+    // Write to indicies for ease of use 
     void writeIndex(int index, uint8_t val) {
         std::cout << index << ": " << val << "\n";
         mem[index] = val;
