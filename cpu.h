@@ -50,6 +50,8 @@ public:
 
     void emulateOp() {
         uint8_t opCode = this->memory.readIndex(pc);
+        uint8_t loBits;
+        uint8_t hiBits;
         switch(opCode){
             // ADC - Add Memory to Accumulator with Carry
             case 0x69:
@@ -126,18 +128,22 @@ public:
             case 0x18:
                 this->ps = this->ps | (~CARRY_MASK);
                 this->pc += 1;
+                break;
             // CLD - Clear Decimal Mode
             case 0xd8:
                 this->ps = this->ps | (~DECIMAL_MASK);
                 this->pc += 1;
+                break;
             // CLI - Clear Interrupt Disable Bit
             case 0x58:
                 this->ps = this->ps | (~INTERRUPT_MASK);;
                 this->pc += 1;
+                break;
             // CLV - Clear Overflow Flag
             case 0xb8:
                 this->ps = this->ps | (~OVERFLOW_MASK);
                 this->pc += 1;
+                break;
             // CMP - Compare Memory with Accumulator
             case 0xc9:
             case 0xc5:
@@ -167,14 +173,21 @@ public:
             case 0xce:
             case 0xde:
                 std::cout << "DEC\n";
+                break;
             // DEX - Decrement Index X by One
             case 0xca:
-                std::cout << "DEX\n";
+                this->regX -= 1;
+                setNegative(this->regX);
+                setZero(this->regX);
                 this->pc += 1;
+                break;
             // DEY - Decrement Index Y by One
             case 0x88:
-                std::cout << "DEY\n";
+                this->regY -= 1;
+                setNegative(this->regY);
+                setZero(this->regY);
                 this->pc += 1;
+                break;
             // EOR - Exclusive-OR Memory with Accumulator
             case 0x49:
             case 0x45:
@@ -249,6 +262,7 @@ public:
             // NOP - No Operation
             case 0xea:
                 this->pc += 1;
+                break;
             // ORA - OR Memory with Accumulator
             case 0x09:
             case 0x05:
@@ -334,25 +348,74 @@ public:
                 break;
             // STA - Store Accumulator in Memory
             case 0x85:
+                // Zero-Page
+                loBits = this->memory.readIndex(this->pc + 1);
+                this->memory.writeAddress(loBits, 0x00, this->accumulator);
+                this->pc += 2;
+                break;
             case 0x95:
+                // Zero-Page, X Offset
+                loBits = this->memory.readIndex(this->pc + 1) + this->regX;
+                this->memory.writeAddress(loBits, 0x00, this->accumulator);
+                this->pc += 2;
+                break;
             case 0x8d:
+                // Absolute
+                loBits = this->memory.readIndex(this->pc + 1);
+                hiBits = this->memory.readIndex(this->pc + 2);
+                this->memory.writeAddress(loBits, hiBits, this->accumulator);
+                this->pc += 3;
+                break;
             case 0x9d:
+                // Absolute, X Offset
             case 0x99:
+                // Absolute, Y Offset
             case 0x81:
+                // Indirect, X Offset
             case 0x91:
+                // Indirect, Y Offset
                 std::cout << "STA\n";
                 break;
             // STX - Store Index X in Memory
             case 0x86:
+                // Zero-Page
+                loBits = this->memory.readIndex(this->pc + 1);
+                this->memory.writeAddress(loBits, 0x00, this->regX);
+                this->pc += 2;
+                break;
             case 0x96:
+                // Zero-Page + Offset
+                loBits = this->memory.readIndex(this->pc + 1) + this->regY;
+                this->memory.writeAddress(loBits, 0x00, this->regX);
+                this->pc += 2;
+                break;
             case 0x8e:
-                std::cout << "STX\n";
+                // Absolute
+                loBits = this->memory.readIndex(this->pc + 1);
+                hiBits = this->memory.readIndex(this->pc + 2);
+                this->memory.writeAddress(loBits, hiBits, this->regX);
+                this->pc += 3;
                 break;
             // STY - Store Index Y in Memory
             case 0x84:
+            // Zero-Page
+                loBits = this->memory.readIndex(this->pc + 1);
+                this->memory.writeAddress(loBits, 0x00, this->regY);
+                this->pc += 2;
+                break;
             case 0x94:
+                // Zero-Page + Offset
+                loBits = this->memory.readIndex(this->pc + 1) + this->regX;
+                this->memory.writeAddress(loBits, 0x00, this->regY);
+                this->pc += 2;
+                break;
             case 0x8c:
-                std::cout << "STY\n";
+                // Absolute
+                std::cout << "STX\n";
+                loBits = this->memory.readIndex(this->pc + 1);
+                hiBits = this->memory.readIndex(this->pc + 2);
+                this->memory.writeAddress(loBits, hiBits, this->regY);
+                this->pc += 3;
                 break;
             // TAX - Transfer Accumulator to Index X
             case 0xaa:
