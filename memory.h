@@ -1,19 +1,19 @@
 #include <cstdint>
 #include <cstdlib>
-#include <cstdio>
+#include <vector>
+#include <iostream>
 
 class cpuMemory{
 private:
-    uint8_t *mem;
+    std::vector<uint8_t> mem;
 
 public:
     cpuMemory() {
-        this->mem = (uint8_t*) malloc(0x10000);
-        mem[31] = 42;
+        mem.reserve(8192);
     }
 
     // Remember that you're pulling memory addresses but the
-    // representation in code is in arrays so you have to convert
+    // representation in code is in an array so you have to convert
     inline int calcIndex(uint8_t lowBits, uint8_t hiBits) {
         uint16_t addr = ((hiBits << 8) | lowBits);
         int index = addr/8;
@@ -31,6 +31,15 @@ public:
 
     void writeAddress(uint8_t lowBits, uint8_t hiBits, uint8_t val) {
         int index = calcIndex(lowBits, hiBits);
+        mem[index] = val;
+    }
+
+    uint8_t readIndex(int index) {
+        return mem[index];
+    }
+
+    void writeIndex(int index, uint8_t val) {
+        std::cout << index << ": " << val << "\n";
         mem[index] = val;
     }
 };
