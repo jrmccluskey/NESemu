@@ -285,7 +285,7 @@ public:
             // RTS - Return from Subroutine
             case 0x60:
                 std::cout << "RTS\n";
-                this->pc += 1:
+                this->pc += 1;
                 break;
             // SBC - Substract Memory from Accumulator with Borrow
             case 0xe9:
