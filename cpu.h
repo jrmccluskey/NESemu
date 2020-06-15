@@ -32,6 +32,22 @@ public:
         ps = 0x00;
     }
 
+    inline void setNegative(uint8_t value) {
+        if((value & NEGATIVE_MASK) != 0x00) {
+            this->ps = this->ps | NEGATIVE_MASK;
+        } else {
+            this->ps = this->ps | (~NEGATIVE_MASK);
+        }
+    }
+
+    inline void setZero(uint8_t value) {
+        if(value == 0x00) {
+            this->ps = this->ps | ZERO_MASK;
+        } else {
+            this->ps = this->ps | (~ZERO_MASK);
+        }
+    }
+
     void emulateOp() {
         uint8_t opCode = this->memory.readIndex(pc);
         switch(opCode){
@@ -187,7 +203,7 @@ public:
                 std::cout << "INY\n";
                 this->pc += 1;
                 break;
-            // JMP - Jumpt to New Location
+            // JMP - Jump to New Location
             case 0x4c:
             case 0x6c:
                 std::cout << "JMP\n";
@@ -340,32 +356,42 @@ public:
                 break;
             // TAX - Transfer Accumulator to Index X
             case 0xaa:
-                std::cout << "TAX\n";
+                this->regX = this->accumulator;
+                setNegative(this->regX);
+                setZero(this->regX);
                 this->pc += 1;
                 break;
             // TAY - Transfer Accumulator to Index Y
             case 0xa8:
-                std::cout << "TAY\n";
+                this->regY = this->accumulator;
+                setNegative(this->regY);
+                setZero(this->regY);
                 this->pc += 1;
                 break;
             // TSX - Transfer Stack Pointer to Index X
             case 0xba:
-                std::cout << "TSX\n";
+                this->regX = this->sp;
+                setNegative(this->regX);
+                setZero(this->regX);
                 this->pc += 1;
                 break;
             // TXA - Transfer Index X to Accumulator
             case 0x8a:
-                std::cout << "TXA\n";
+                this->accumulator = this->regX;
+                setNegative(this->accumulator);
+                setZero(this->accumulator);
                 this->pc += 1;
                 break;
             // TXS - Transfer Index X to Stack Pointer
             case 0x9a:
-                std::cout << "TXS\n";
+                this->sp = this->regX;
                 this->pc += 1;
                 break;
             // TYA - Transfer Index Y to Accumulator
             case 0x98:
-                std::cout << "TYA\n";
+                this->accumulator = this->regY;
+                setNegative(this->accumulator);
+                setZero(this->accumulator);
                 this->pc += 1;
                 break;
             default:
