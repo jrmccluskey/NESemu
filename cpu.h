@@ -53,6 +53,23 @@ public:
         }
     }
 
+    uint8_t readZeroPage(uint8_t offset) {
+        uint8_t loBits = this->memory.readAddress(this->pc + 0x01);
+        loBits = (loBits + offset) % 256;
+        return this->memory.readAddress(loBits, 0x00);
+    }
+
+    void writeZeroPage(uint8_t value, uint8_t offset) {
+        uint8_t loBits = this->memory.readAddress(this->pc + 0x01);
+        loBits = (loBits + offset) % 256;
+        this->memory.writeAddress(loBits, 0x00, value);
+    }
+
+    inline uint16_t absoluteCalc(uint8_t loBits, uint8_t hiBits, uint8_t offset) {
+        uint16_t addr = ((hiBits << 8) | loBits);
+        return addr + offset;
+    }
+
     uint16_t branchCalc(uint16_t progCounter, uint8_t offset) {
         uint8_t maskedOffset = offset & (~NEGATIVE_MASK);
         if(offset == maskedOffset) {
@@ -60,16 +77,6 @@ public:
         } else {
             return progCounter - maskedOffset;
         }
-    }
-
-
-    inline uint8_t zeroPageCalc(uint8_t loBits, uint8_t offset) {
-        return (loBits + offset) % 256;
-    }
-
-    inline uint16_t absoluteCalc(uint8_t loBits, uint8_t hiBits, uint8_t offset) {
-        uint16_t addr = ((hiBits << 8) | loBits);
-        return addr + offset;
     }
 
     inline void branchSet(uint8_t mask) {
@@ -302,6 +309,11 @@ public:
                 break;
             // LDX - Load Index X with Memory
             case 0xa2:
+                this->regX = this->memory.readAddress(this->pc + 0x01);
+                setNegative(this->regX);
+                setZero(this->regX);
+                this->pc += 0x02;
+                break;
             case 0xa6:
             case 0xb6:
             case 0xae:
@@ -309,6 +321,11 @@ public:
                 std::cout << "LDX\n";
             // LDY - Load Index Y with Memory
             case 0xa0:
+                this->regY = this->memory.readAddress(this->pc + 0x01);
+                setNegative(this->regY);
+                setZero(this->regY);
+                this->pc += 0x02;
+                break;
             case 0xa4:
             case 0xb4:
             case 0xac:
@@ -415,15 +432,12 @@ public:
             // STA - Store Accumulator in Memory
             case 0x85:
                 // Zero-Page
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                this->memory.writeAddress(loBits, 0x00, this->accumulator);
+                writeZeroPage(this->accumulator, 0x00);
                 this->pc += 0x02;
                 break;
             case 0x95:
                 // Zero-Page, X Offset
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                loBits = zeroPageCalc(loBits, this->regX);
-                this->memory.writeAddress(loBits, 0x00, this->accumulator);
+                writeZeroPage(this->accumulator, this->regX);
                 this->pc += 0x02;
                 break;
             case 0x8d:
@@ -456,15 +470,12 @@ public:
             // STX - Store Index X in Memory
             case 0x86:
                 // Zero-Page
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                this->memory.writeAddress(loBits, 0x00, this->regX);
+                writeZeroPage(this->regX, 0x00);
                 this->pc += 0x02;
                 break;
             case 0x96:
-                // Zero-Page + Offset
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                loBits = zeroPageCalc(loBits, this->regY);
-                this->memory.writeAddress(loBits, 0x00, this->regX);
+                // Zero-Page + Y Offset
+                writeZeroPage(this->regX, this->regY);
                 this->pc += 0x02;
                 break;
             case 0x8e:
@@ -477,15 +488,12 @@ public:
             // STY - Store Index Y in Memory
             case 0x84:
                 // Zero-Page
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                this->memory.writeAddress(loBits, 0x00, this->regY);
+                writeZeroPage(this->regY, 0x00);
                 this->pc += 0x02;
                 break;
             case 0x94:
-                // Zero-Page + Offset
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                loBits = zeroPageCalc(loBits, this->regX);
-                this->memory.writeAddress(loBits, 0x00, this->regY);
+                // Zero-Page + X Offset
+                writeZeroPage(this->regY, this->regX);
                 this->pc += 0x02;
                 break;
             case 0x8c:
