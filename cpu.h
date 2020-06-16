@@ -62,6 +62,7 @@ public:
         }
     }
 
+
     inline uint8_t zeroPageCalc(uint8_t loBits, uint8_t offset) {
         return (loBits + offset) % 256;
     }
@@ -69,6 +70,22 @@ public:
     inline uint16_t absoluteCalc(uint8_t loBits, uint8_t hiBits, uint8_t offset) {
         uint16_t addr = ((hiBits << 8) | loBits);
         return addr + offset;
+    }
+
+    inline void branchSet(uint8_t mask) {
+        if((this->ps & mask) != 0x00) {
+            uint8_t offset = this->memory.readAddress(this->pc + 0x01);
+            this->pc = branchCalc(this->pc, offset);
+        }
+        this->pc += 0x02;
+    }
+
+    inline void branchClear(uint8_t mask) {
+        if((this->ps & mask) == 0x00) {
+            uint8_t offset = this->memory.readAddress(this->pc + 0x01);
+            this->pc = branchCalc(this->pc, offset);
+        }
+        this->pc += 0x02;
     }
 
     inline void push(uint8_t value) {
@@ -128,27 +145,15 @@ public:
                 break;
             // BCC - Branch on Carry Clear
             case 0x90:
-                if((this->ps & CARRY_MASK) == 0x00) {
-                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
-                    this->pc = branchCalc(this->pc, offset);
-                }
-                this->pc += 0x02;
+                branchClear(CARRY_MASK);
                 break;
             // BCS - Branch on Carry Set
             case 0xb0:
-                if((this->ps & CARRY_MASK) != 0x00) {
-                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
-                    this->pc = branchCalc(this->pc, offset);
-                }
-                this->pc += 0x02;
+                branchSet(CARRY_MASK);
                 break;
             // BEQ - Branch on Result Zero
             case 0xf0:
-                if((this->ps & ZERO_MASK) != 0x00) {
-                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
-                    this->pc = branchCalc(this->pc, offset);
-                }
-                this->pc += 0x02;
+                branchSet(ZERO_MASK);
                 break;
             // BIT - Test Bits in Memory with Accumulator
             case 0x24:
@@ -157,28 +162,15 @@ public:
                 break;
             // BMI - Branch on Result Minus
             case 0x30:
-                std::cout << "BMI\n";
-                if((this->ps & NEGATIVE_MASK) != 0x00) {
-                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
-                    this->pc = branchCalc(this->pc, offset);
-                }
-                this->pc += 0x02;
+                branchSet(NEGATIVE_MASK);
                 break;
             // BNE - Branch on Result not Zero
             case 0xd0:
-                if((this->ps & CARRY_MASK) == 0x00) {
-                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
-                    this->pc = branchCalc(this->pc, offset);
-                }
-                this->pc += 0x02;
+                branchClear(ZERO_MASK);
                 break;
             // BPL - Branch on Result Plus
             case 0x10:
-                if((this->ps & NEGATIVE_MASK) == 0x00) {
-                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
-                    this->pc = branchCalc(this->pc, offset);
-                }
-                this->pc += 0x02;
+                branchClear(NEGATIVE_MASK);
                 break;
             // BRK - Force Break
             case 0x00:
@@ -186,38 +178,30 @@ public:
                 break;
             // BVC - Branch on Overflow Clear
             case 0x50:
-                if((this->ps & OVERFLOW_MASK) == 0x00) {
-                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
-                    this->pc = branchCalc(this->pc, offset);
-                }
-                this->pc += 0x02;
+                branchClear(OVERFLOW_MASK);
                 break;
             // BVS - Branch on Overflow Set
             case 0x70:
-                if((this->ps & OVERFLOW_MASK) != 0x00) {
-                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
-                    this->pc = branchCalc(this->pc, offset);
-                }
-                this->pc += 0x02;
+                branchSet(OVERFLOW_MASK);
                 break;
             // CLC - Clear Carry Flag
             case 0x18:
-                this->ps = this->ps | (~CARRY_MASK);
+                this->ps = this->ps & (~CARRY_MASK);
                 this->pc += 0x01;
                 break;
             // CLD - Clear Decimal Mode
             case 0xd8:
-                this->ps = this->ps | (~DECIMAL_MASK);
+                this->ps = this->ps & (~DECIMAL_MASK);
                 this->pc += 0x01;
                 break;
             // CLI - Clear Interrupt Disable Bit
             case 0x58:
-                this->ps = this->ps | (~INTERRUPT_MASK);;
+                this->ps = this->ps & (~INTERRUPT_MASK);;
                 this->pc += 0x01;
                 break;
             // CLV - Clear Overflow Flag
             case 0xb8:
-                this->ps = this->ps | (~OVERFLOW_MASK);
+                this->ps = this->ps & (~OVERFLOW_MASK);
                 this->pc += 0x01;
                 break;
             // CMP - Compare Memory with Accumulator
