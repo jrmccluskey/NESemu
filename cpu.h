@@ -63,8 +63,12 @@ public:
     }
 
     inline uint8_t pop() {
+        if(this->pc == STACK_TOP) {
+            this->pc == 0x00;
+        } else {
+            this->pc += 0x01;
+        }
         uint8_t value = this->memory.readAddress(this->sp, 0x01);
-        this->pc += 0x01;
         return value;
     }
 
