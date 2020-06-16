@@ -65,9 +65,17 @@ public:
         this->memory.writeAddress(loBits, 0x00, value);
     }
 
-    inline uint16_t absoluteCalc(uint8_t loBits, uint8_t hiBits, uint8_t offset) {
-        uint16_t addr = ((hiBits << 8) | loBits);
-        return addr + offset;
+    uint8_t readAbsolute(uint8_t offset) {
+        uint8_t loBits = this->memory.readAddress(this->pc + 0x01);
+        uint8_t hiBits = this->memory.readAddress(this->pc + 0x02);
+        return ((hiBits << 8) | loBits) + offset;
+    }
+
+    void writeAbsolute(uint8_t value, uint8_t offset) {
+        uint8_t loBits = this->memory.readAddress(this->pc + 0x01);
+        uint8_t hiBits = this->memory.readAddress(this->pc + 0x02);
+        uint16_t addr = ((hiBits << 8) | loBits) + offset;
+        this->memory.writeAddress(addr, value);
     }
 
     uint16_t branchCalc(uint16_t progCounter, uint8_t offset) {
@@ -442,24 +450,18 @@ public:
                 break;
             case 0x8d:
                 // Absolute
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                hiBits = this->memory.readAddress(this->pc + 0x02);
-                this->memory.writeAddress(loBits, hiBits, this->accumulator);
+                writeAbsolute(this->accumulator, 0x00);
                 this->pc += 0x03;
                 break;
             case 0x9d:
                 // Absolute, X Offset
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                hiBits = this->memory.readAddress(this->pc + 0x02);
-                addrScratch = absoluteCalc(loBits, hiBits, this->regX);
-                this->memory.writeAddress(addrScratch, this->accumulator);
+                writeAbsolute(this->accumulator, this->regX);
+                this->pc += 0x03;
                 break;
             case 0x99:
                 // Absolute, Y Offset
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                hiBits = this->memory.readAddress(this->pc + 0x02);
-                addrScratch = absoluteCalc(loBits, hiBits, this->regY);
-                this->memory.writeAddress(addrScratch, this->accumulator);
+                writeAbsolute(this->accumulator, this->regY);
+                this->pc += 0x03;
                 break;
             case 0x81:
                 // Indirect, X Offset
@@ -480,9 +482,7 @@ public:
                 break;
             case 0x8e:
                 // Absolute
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                hiBits = this->memory.readAddress(this->pc + 0x02);
-                this->memory.writeAddress(loBits, hiBits, this->regX);
+                writeAbsolute(this->regX, 0x00);
                 this->pc += 0x03;
                 break;
             // STY - Store Index Y in Memory
@@ -498,9 +498,7 @@ public:
                 break;
             case 0x8c:
                 // Absolute
-                loBits = this->memory.readAddress(this->pc + 0x01);
-                hiBits = this->memory.readAddress(this->pc + 0x02);
-                this->memory.writeAddress(loBits, hiBits, this->regY);
+                writeAbsolute(this->accumulator, 0x00);
                 this->pc += 0x03;
                 break;
             // TAX - Transfer Accumulator to Index X
