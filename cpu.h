@@ -54,7 +54,7 @@ public:
     }
 
     uint16_t branchCalc(uint16_t progCounter, uint8_t offset) {
-        uint8_t maskedOffset = offset & (~ZERO_MASK);
+        uint8_t maskedOffset = offset & (~NEGATIVE_MASK);
         if(offset == maskedOffset) {
             return progCounter + maskedOffset;
         } else {
@@ -294,6 +294,10 @@ public:
                 break;
             // JMP - Jump to New Location
             case 0x4c:
+                loBits = this->memory.readAddress(this->pc + 0x01);
+                hiBits = this->memory.readAddress(this->pc + 0x02);
+                this->pc = ((hiBits << 8) | loBits);
+                break;
             case 0x6c:
                 std::cout << "JMP\n";
                 break;
@@ -447,8 +451,18 @@ public:
                 break;
             case 0x9d:
                 // Absolute, X Offset
+                loBits = this->memory.readAddress(this->pc + 0x01);
+                hiBits = this->memory.readAddress(this->pc + 0x02);
+                addrScratch = absoluteCalc(loBits, hiBits, this->regX);
+                this->memory.writeAddress(addrScratch, this->accumulator);
+                break;
             case 0x99:
                 // Absolute, Y Offset
+                loBits = this->memory.readAddress(this->pc + 0x01);
+                hiBits = this->memory.readAddress(this->pc + 0x02);
+                addrScratch = absoluteCalc(loBits, hiBits, this->regY);
+                this->memory.writeAddress(addrScratch, this->accumulator);
+                break;
             case 0x81:
                 // Indirect, X Offset
             case 0x91:
