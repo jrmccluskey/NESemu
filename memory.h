@@ -20,7 +20,7 @@ public:
     }
 
     uint8_t readAddress(uint8_t lowBits, uint8_t hiBits) {
-        uint16_t addr = calcIndex(lowBits, hiBits);
+        uint16_t addr = calcAddr(lowBits, hiBits);
         return mem[addr];
     }
 

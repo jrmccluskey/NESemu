@@ -53,10 +53,28 @@ public:
         }
     }
 
+    uint16_t branchCalc(uint16_t progCounter, uint8_t offset) {
+        uint8_t maskedOffset = offset & (~ZERO_MASK);
+        if(offset == maskedOffset) {
+            return progCounter + maskedOffset;
+        } else {
+            return progCounter - maskedOffset;
+        }
+    }
+
+    inline uint8_t zeroPageCalc(uint8_t loBits, uint8_t offset) {
+        return (loBits + offset) % 256;
+    }
+
+    inline uint16_t absoluteCalc(uint8_t loBits, uint8_t hiBits, uint8_t offset) {
+        uint16_t addr = ((hiBits << 8) | loBits);
+        return addr + offset;
+    }
+
     inline void push(uint8_t value) {
         this->memory.writeAddress(this->sp, 0x01, value);
         if(this->pc == 0x00) {
-            this->pc == STACK_TOP;
+            this->pc = STACK_TOP;
         } else {
             this->pc -= 0x01;
         }
@@ -64,7 +82,7 @@ public:
 
     inline uint8_t pop() {
         if(this->pc == STACK_TOP) {
-            this->pc == 0x00;
+            this->pc = 0x00;
         } else {
             this->pc += 0x01;
         }
@@ -76,6 +94,7 @@ public:
         uint8_t opCode = this->memory.readAddress(pc);
         uint8_t loBits;
         uint8_t hiBits;
+        uint16_t addrScratch;
         switch(opCode){
             // ADC - Add Memory to Accumulator with Carry
             case 0x69:
@@ -109,15 +128,27 @@ public:
                 break;
             // BCC - Branch on Carry Clear
             case 0x90:
-                std:: cout << "BCC\n";
+                if((this->ps & CARRY_MASK) == 0x00) {
+                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
+                    this->pc = branchCalc(this->pc, offset);
+                }
+                this->pc += 0x02;
                 break;
             // BCS - Branch on Carry Set
             case 0xb0:
-                std::cout << "BCS\n";
+                if((this->ps & CARRY_MASK) != 0x00) {
+                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
+                    this->pc = branchCalc(this->pc, offset);
+                }
+                this->pc += 0x02;
                 break;
             // BEQ - Branch on Result Zero
             case 0xf0:
-                std::cout << "BEQ\n";
+                if((this->ps & ZERO_MASK) != 0x00) {
+                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
+                    this->pc = branchCalc(this->pc, offset);
+                }
+                this->pc += 0x02;
                 break;
             // BIT - Test Bits in Memory with Accumulator
             case 0x24:
@@ -127,14 +158,27 @@ public:
             // BMI - Branch on Result Minus
             case 0x30:
                 std::cout << "BMI\n";
+                if((this->ps & NEGATIVE_MASK) != 0x00) {
+                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
+                    this->pc = branchCalc(this->pc, offset);
+                }
+                this->pc += 0x02;
                 break;
             // BNE - Branch on Result not Zero
             case 0xd0:
-                std::cout << "BNE\n";
+                if((this->ps & CARRY_MASK) == 0x00) {
+                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
+                    this->pc = branchCalc(this->pc, offset);
+                }
+                this->pc += 0x02;
                 break;
             // BPL - Branch on Result Plus
             case 0x10:
-                std::cout << "BPL\n";
+                if((this->ps & NEGATIVE_MASK) == 0x00) {
+                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
+                    this->pc = branchCalc(this->pc, offset);
+                }
+                this->pc += 0x02;
                 break;
             // BRK - Force Break
             case 0x00:
@@ -142,11 +186,19 @@ public:
                 break;
             // BVC - Branch on Overflow Clear
             case 0x50:
-                std::cout << "BVC\n";
+                if((this->ps & OVERFLOW_MASK) == 0x00) {
+                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
+                    this->pc = branchCalc(this->pc, offset);
+                }
+                this->pc += 0x02;
                 break;
             // BVS - Branch on Overflow Set
             case 0x70:
-                std::cout << "BVC\n";
+                if((this->ps & OVERFLOW_MASK) != 0x00) {
+                    uint8_t offset = this->memory.readAddress(this->pc + 0x01);
+                    this->pc = branchCalc(this->pc, offset);
+                }
+                this->pc += 0x02;
                 break;
             // CLC - Clear Carry Flag
             case 0x18:
@@ -300,22 +352,24 @@ public:
                 break;
             // PHA - Push Accumulator on Stack
             case 0x48:
-                std::cout << "PHA\n";
+                push(this->accumulator);
                 this->pc += 0x01;
                 break;
             // PHP - Push Processor Status on Stack
             case 0x08:
-                std::cout << "PHP\n";
+                push(this->ps);
                 this->pc += 0x01;
                 break;
             // PLA - Pull Accumulator from Stack
             case 0x68:
-                std::cout << "PLA\n";
+                this->accumulator = pop();
+                setNegative(this->accumulator);
+                setZero(this->accumulator);
                 this->pc += 0x01;
                 break;
             // PLP - Pull Processor Status from Stack
             case 0x28:
-                std::cout << "PLP\n";
+                this->ps = pop();
                 this->pc += 0x01;
                 break;
             // ROL - Rotate One Bit Left
@@ -379,7 +433,8 @@ public:
                 break;
             case 0x95:
                 // Zero-Page, X Offset
-                loBits = this->memory.readAddress(this->pc + 0x01) + this->regX;
+                loBits = this->memory.readAddress(this->pc + 0x01);
+                loBits = zeroPageCalc(loBits, this->regX);
                 this->memory.writeAddress(loBits, 0x00, this->accumulator);
                 this->pc += 0x02;
                 break;
@@ -409,7 +464,8 @@ public:
                 break;
             case 0x96:
                 // Zero-Page + Offset
-                loBits = this->memory.readAddress(this->pc + 0x01) + this->regY;
+                loBits = this->memory.readAddress(this->pc + 0x01);
+                loBits = zeroPageCalc(loBits, this->regY);
                 this->memory.writeAddress(loBits, 0x00, this->regX);
                 this->pc += 0x02;
                 break;
@@ -422,20 +478,20 @@ public:
                 break;
             // STY - Store Index Y in Memory
             case 0x84:
-            // Zero-Page
+                // Zero-Page
                 loBits = this->memory.readAddress(this->pc + 0x01);
                 this->memory.writeAddress(loBits, 0x00, this->regY);
                 this->pc += 0x02;
                 break;
             case 0x94:
                 // Zero-Page + Offset
-                loBits = this->memory.readAddress(this->pc + 0x01) + this->regX;
+                loBits = this->memory.readAddress(this->pc + 0x01);
+                loBits = zeroPageCalc(loBits, this->regX);
                 this->memory.writeAddress(loBits, 0x00, this->regY);
                 this->pc += 0x02;
                 break;
             case 0x8c:
                 // Absolute
-                std::cout << "STX\n";
                 loBits = this->memory.readAddress(this->pc + 0x01);
                 hiBits = this->memory.readAddress(this->pc + 0x02);
                 this->memory.writeAddress(loBits, hiBits, this->regY);
