@@ -10,6 +10,8 @@ const uint8_t BREAK_MASK = 0x10;
 const uint8_t OVERFLOW_MASK = 0x40;
 const uint8_t NEGATIVE_MASK = 0x80;
 
+const uint8_t STACK_TOP = 0xff;
+
 class cpu {
 private:
     // Registers
@@ -31,7 +33,7 @@ public:
         regY = 0x00;
         this->memory = memory;
         pc = 0x0000;
-        sp = 0xff;
+        sp = STACK_TOP;
         ps = 0x34;
     }
 
@@ -49,6 +51,21 @@ public:
         } else {
             this->ps = this->ps | (~ZERO_MASK);
         }
+    }
+
+    inline void push(uint8_t value) {
+        this->memory.writeAddress(this->sp, 0x01, value);
+        if(this->pc == 0x00) {
+            this->pc == STACK_TOP;
+        } else {
+            this->pc -= 0x01;
+        }
+    }
+
+    inline uint8_t pop() {
+        uint8_t value = this->memory.readAddress(this->sp, 0x01);
+        this->pc += 0x01;
+        return value;
     }
 
     void emulateOp() {
@@ -130,22 +147,22 @@ public:
             // CLC - Clear Carry Flag
             case 0x18:
                 this->ps = this->ps | (~CARRY_MASK);
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // CLD - Clear Decimal Mode
             case 0xd8:
                 this->ps = this->ps | (~DECIMAL_MASK);
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // CLI - Clear Interrupt Disable Bit
             case 0x58:
                 this->ps = this->ps | (~INTERRUPT_MASK);;
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // CLV - Clear Overflow Flag
             case 0xb8:
                 this->ps = this->ps | (~OVERFLOW_MASK);
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // CMP - Compare Memory with Accumulator
             case 0xc9:
@@ -182,14 +199,14 @@ public:
                 this->regX -= 1;
                 setNegative(this->regX);
                 setZero(this->regX);
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // DEY - Decrement Index Y by One
             case 0x88:
                 this->regY -= 1;
                 setNegative(this->regY);
                 setZero(this->regY);
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // EOR - Exclusive-OR Memory with Accumulator
             case 0x49:
@@ -212,12 +229,12 @@ public:
             // INX - Increment Index X by One
             case 0xe8:
                 std::cout << "INX\n";
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // INY - Increment Index Y by One
             case 0xc8:
                 std::cout << "INY\n";
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // JMP - Jump to New Location
             case 0x4c:
@@ -264,7 +281,7 @@ public:
                 break;
             // NOP - No Operation
             case 0xea:
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // ORA - OR Memory with Accumulator
             case 0x09:
@@ -280,22 +297,22 @@ public:
             // PHA - Push Accumulator on Stack
             case 0x48:
                 std::cout << "PHA\n";
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // PHP - Push Processor Status on Stack
             case 0x08:
                 std::cout << "PHP\n";
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // PLA - Pull Accumulator from Stack
             case 0x68:
                 std::cout << "PLA\n";
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // PLP - Pull Processor Status from Stack
             case 0x28:
                 std::cout << "PLP\n";
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // ROL - Rotate One Bit Left
             case 0x2a:
@@ -316,12 +333,12 @@ public:
             // RTI - Return from Interrupt
             case 0x40:
                 std::cout << "RTI\n";
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // RTS - Return from Subroutine
             case 0x60:
                 std::cout << "RTS\n";
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // SBC - Substract Memory from Accumulator with Borrow
             case 0xe9:
@@ -337,37 +354,37 @@ public:
             // SEC - Set Carry Flag
             case 0x38:
                 this->ps = this->ps | CARRY_MASK;
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // SED - Set Decimal Flag
             case 0xf8:
                 this->ps = this->ps | DECIMAL_MASK;
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // SEI - Set Interrupt Disable Status
             case 0x78:
                 this->ps = this->ps | INTERRUPT_MASK;
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // STA - Store Accumulator in Memory
             case 0x85:
                 // Zero-Page
-                loBits = this->memory.readAddress(this->pc + 0x08);
+                loBits = this->memory.readAddress(this->pc + 0x01);
                 this->memory.writeAddress(loBits, 0x00, this->accumulator);
-                this->pc += 0x10;
+                this->pc += 0x02;
                 break;
             case 0x95:
                 // Zero-Page, X Offset
-                loBits = this->memory.readAddress(this->pc + 0x08) + this->regX;
+                loBits = this->memory.readAddress(this->pc + 0x01) + this->regX;
                 this->memory.writeAddress(loBits, 0x00, this->accumulator);
-                this->pc += 0x10;
+                this->pc += 0x02;
                 break;
             case 0x8d:
                 // Absolute
-                loBits = this->memory.readAddress(this->pc + 0x08);
-                hiBits = this->memory.readAddress(this->pc + 0x10);
+                loBits = this->memory.readAddress(this->pc + 0x01);
+                hiBits = this->memory.readAddress(this->pc + 0x02);
                 this->memory.writeAddress(loBits, hiBits, this->accumulator);
-                this->pc += 0x18;
+                this->pc += 0x03;
                 break;
             case 0x9d:
                 // Absolute, X Offset
@@ -382,83 +399,83 @@ public:
             // STX - Store Index X in Memory
             case 0x86:
                 // Zero-Page
-                loBits = this->memory.readAddress(this->pc + 0x08);
+                loBits = this->memory.readAddress(this->pc + 0x01);
                 this->memory.writeAddress(loBits, 0x00, this->regX);
-                this->pc += 0x10;
+                this->pc += 0x02;
                 break;
             case 0x96:
                 // Zero-Page + Offset
-                loBits = this->memory.readAddress(this->pc + 0x08) + this->regY;
+                loBits = this->memory.readAddress(this->pc + 0x01) + this->regY;
                 this->memory.writeAddress(loBits, 0x00, this->regX);
-                this->pc += 0x10;
+                this->pc += 0x02;
                 break;
             case 0x8e:
                 // Absolute
-                loBits = this->memory.readAddress(this->pc + 0x08);
-                hiBits = this->memory.readAddress(this->pc + 0x10);
+                loBits = this->memory.readAddress(this->pc + 0x01);
+                hiBits = this->memory.readAddress(this->pc + 0x02);
                 this->memory.writeAddress(loBits, hiBits, this->regX);
-                this->pc += 0x18;
+                this->pc += 0x03;
                 break;
             // STY - Store Index Y in Memory
             case 0x84:
             // Zero-Page
-                loBits = this->memory.readAddress(this->pc + 0x08);
+                loBits = this->memory.readAddress(this->pc + 0x01);
                 this->memory.writeAddress(loBits, 0x00, this->regY);
-                this->pc += 0x10;
+                this->pc += 0x02;
                 break;
             case 0x94:
                 // Zero-Page + Offset
-                loBits = this->memory.readAddress(this->pc + 0x08) + this->regX;
+                loBits = this->memory.readAddress(this->pc + 0x01) + this->regX;
                 this->memory.writeAddress(loBits, 0x00, this->regY);
-                this->pc += 0x10;
+                this->pc += 0x02;
                 break;
             case 0x8c:
                 // Absolute
                 std::cout << "STX\n";
-                loBits = this->memory.readAddress(this->pc + 0x08);
-                hiBits = this->memory.readAddress(this->pc + 0x10);
+                loBits = this->memory.readAddress(this->pc + 0x01);
+                hiBits = this->memory.readAddress(this->pc + 0x02);
                 this->memory.writeAddress(loBits, hiBits, this->regY);
-                this->pc += 0x18;
+                this->pc += 0x03;
                 break;
             // TAX - Transfer Accumulator to Index X
             case 0xaa:
                 this->regX = this->accumulator;
                 setNegative(this->regX);
                 setZero(this->regX);
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // TAY - Transfer Accumulator to Index Y
             case 0xa8:
                 this->regY = this->accumulator;
                 setNegative(this->regY);
                 setZero(this->regY);
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // TSX - Transfer Stack Pointer to Index X
             case 0xba:
                 this->regX = this->sp;
                 setNegative(this->regX);
                 setZero(this->regX);
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // TXA - Transfer Index X to Accumulator
             case 0x8a:
                 this->accumulator = this->regX;
                 setNegative(this->accumulator);
                 setZero(this->accumulator);
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // TXS - Transfer Index X to Stack Pointer
             case 0x9a:
                 this->sp = this->regX;
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             // TYA - Transfer Index Y to Accumulator
             case 0x98:
                 this->accumulator = this->regY;
                 setNegative(this->accumulator);
                 setZero(this->accumulator);
-                this->pc += 0x08;
+                this->pc += 0x01;
                 break;
             default:
                 std::cout << "Opcode Not Implemented. \n";
