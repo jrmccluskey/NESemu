@@ -104,7 +104,7 @@ public:
         return this->memory.readAddress(newAddr);
     }
 
-    uint8_t writeIndirectIndexed(uint8_t value) {
+    void writeIndirectIndexed(uint8_t value) {
         uint8_t loBits = this->memory.readAddress(this->pc + 0x01);
         uint8_t newLo = this->memory.readAddress(loBits, 0x00);
         uint8_t newHi = this->memory.readAddress((loBits + 0x01)%256, 0x00);
