@@ -156,6 +156,20 @@ public:
         return value;
     }
 
+    // Function corresponding to AND
+    void andMemWithAccumulator(uint8_t value) {
+        this->accumulator = this->accumulator & value;
+        setNegative(this->accumulator);
+        setZero(this->accumulator);
+    }
+
+    // Functoin corresponding to ORA
+    void orMemWithAccumulator(uint8_t value) {
+        this->accumulator = this->accumulator | value;
+        setNegative(this->accumulator);
+        setZero(this->accumulator);
+    }
+
     void emulateOp() {
         uint8_t opCode = this->memory.readAddress(pc);
         uint8_t loBits;
@@ -175,14 +189,51 @@ public:
                 break;
             // AND - AND Memory with Accumulator
             case 0x29:
+                // Immediate
+                andMemWithAccumulator(this->memory.readAddress(this->pc + 0x01));
+                this->pc += 0x02;
+                break;
             case 0x25:
+                // Zero-Page
+                loBits = readZeroPage(0x00);
+                andMemWithAccumulator(loBits);
+                this->pc += 0x02;
+                break;
             case 0x35:
+                // Zero-Page + X
+                loBits = readZeroPage(this->regX);
+                andMemWithAccumulator(loBits);
+                this->pc += 0x02;
+                break;
             case 0x2d:
+                // Absolute
+                loBits = readAbsolute(0x00);
+                andMemWithAccumulator(loBits);
+                this->pc += 0x03;
+                break;
             case 0x3d:
+                // Absolute + X
+                loBits = readAbsolute(this->regX);
+                andMemWithAccumulator(loBits);
+                this->pc += 0x03;
+                break;
             case 0x39:
+                // Absolute + Y
+                loBits = readAbsolute(this->regY);
+                andMemWithAccumulator(loBits);
+                this->pc += 0x03;
+                break;
             case 0x21:
+                // Indirect X
+                loBits = readIndexedIndirect();
+                andMemWithAccumulator(loBits);
+                this->pc += 0x02;
+                break;
             case 0x31:
-                std::cout << "AND\n";
+                // Indirect Y
+                loBits = readIndirectIndexed();
+                andMemWithAccumulator(loBits);
+                this->pc += 0x02;
                 break;
             // ASL - Shift Left One Bit
             case 0x0a:
@@ -388,14 +439,50 @@ public:
                 break;
             // ORA - OR Memory with Accumulator
             case 0x09:
+                // Immediate
+                loBits =  this->memory.readAddress(this->pc + 0x01);
+                orMemWithAccumulator(loBits);
+                this->pc += 0x02;
+                break;
             case 0x05:
+                // Zero-Page
+                loBits = readZeroPage(0x00);
+                orMemWithAccumulator(loBits);
+                this->pc += 0x02;
+                break;
             case 0x15:
+                // Zero-Page + x
+                loBits = readZeroPage(this->regX);
+                orMemWithAccumulator(loBits);
+                this->pc += 0x02;
+                break;
             case 0x0d:
+                // Absolute
+                loBits =  readAbsolute(0x00);
+                orMemWithAccumulator(loBits);
+                this->pc += 0x03;
+                break;
             case 0x1d:
+                // Absolute + X
+                loBits = readAbsolute(this->regX);
+                orMemWithAccumulator(loBits);
+                this->pc += 0x03;
+                break;
             case 0x19:
+                // Absolute + Y
+                loBits = readAbsolute(this->regY);
+                orMemWithAccumulator(loBits);
+                this->pc += 0x03;
+                break;
             case 0x01:
+                loBits = readIndexedIndirect();
+                orMemWithAccumulator(loBits);
+                this->pc += 0x02;
+                break;
             case 0x11:
-                std::cout << "ORA\n";
+                loBits = readIndirectIndexed();
+                orMemWithAccumulator(loBits);
+                this->pc += 0x02;
                 break;
             // PHA - Push Accumulator on Stack
             case 0x48:
