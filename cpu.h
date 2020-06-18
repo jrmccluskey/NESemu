@@ -78,6 +78,40 @@ public:
         this->memory.writeAddress(addr, value);
     }
 
+    // X, ind
+    uint8_t readIndexedIndirect() {
+        uint8_t byte = this->memory.readAddress(this->pc + 0x01);
+        uint8_t loBits = (byte + this->regX) % 256;
+        uint8_t newLo = this->memory.readAddress(loBits, 0x00);
+        uint8_t newHi = this->memory.readAddress((loBits + 0x01)%256, 0x00);
+        return this->memory.readAddress(newLo, newHi);
+    }
+
+    void writeIndexedIndirect(uint8_t value) {
+        uint8_t byte = this->memory.readAddress(this->pc + 0x01);
+        uint8_t loBits = (byte + this->regX) % 256;
+        uint8_t newLo = this->memory.readAddress(loBits, 0x00);
+        uint8_t newHi = this->memory.readAddress((loBits + 0x01)%256, 0x00);
+        this->memory.writeAddress(newLo, newHi, value);
+    }
+
+    // ind, Y
+    uint8_t readIndirectIndexed() {
+        uint8_t loBits = this->memory.readAddress(this->pc + 0x01);
+        uint8_t newLo = this->memory.readAddress(loBits, 0x00);
+        uint8_t newHi = this->memory.readAddress((loBits + 0x01)%256, 0x00);
+        uint16_t newAddr = ((newHi << 8) | newLo) + this->regY;
+        return this->memory.readAddress(newAddr);
+    }
+
+    uint8_t writeIndirectIndexed(uint8_t value) {
+        uint8_t loBits = this->memory.readAddress(this->pc + 0x01);
+        uint8_t newLo = this->memory.readAddress(loBits, 0x00);
+        uint8_t newHi = this->memory.readAddress((loBits + 0x01)%256, 0x00);
+        uint16_t newAddr = ((newHi << 8) | newLo) + this->regY;
+        this->memory.writeAddress(newAddr, value);
+    }
+
     uint16_t branchCalc(uint16_t progCounter, uint8_t offset) {
         uint8_t maskedOffset = offset & (~NEGATIVE_MASK);
         if(offset == maskedOffset) {
